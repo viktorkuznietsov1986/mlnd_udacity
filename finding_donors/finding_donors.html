@@ -11931,7 +11931,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># TODO: Total number of records</span>
@@ -12025,7 +12025,7 @@ Percentage of individuals making more than $50,000: 24.78439697492371%
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Split the data into features and target label</span>
@@ -12075,7 +12075,7 @@ Percentage of individuals making more than $50,000: 24.78439697492371%
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Log-transform the skewed features</span>
@@ -12126,7 +12126,7 @@ Percentage of individuals making more than $50,000: 24.78439697492371%
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Import sklearn.preprocessing.StandardScaler</span>
@@ -12339,7 +12339,7 @@ Percentage of individuals making more than $50,000: 24.78439697492371%
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[36]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># TODO: One-hot encode the &#39;features_log_minmax_transform&#39; data using pandas.get_dummies()</span>
@@ -12392,7 +12392,7 @@ Percentage of individuals making more than $50,000: 24.78439697492371%
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[37]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Import train_test_split</span>
@@ -12425,6 +12425,18 @@ Percentage of individuals making more than $50,000: 24.78439697492371%
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>Training set has 36177 samples.
 Testing set has 9045 samples.
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>/Users/Viktor/anaconda3/lib/python3.6/site-packages/sklearn/cross_validation.py:41: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.
+  &#34;This module will be removed in 0.20.&#34;, DeprecationWarning)
 </pre>
 </div>
 </div>
@@ -12482,7 +12494,7 @@ It is a ratio of true positives(words classified as spam, and which are actually
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[43]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">TP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">income</span><span class="p">)</span> <span class="c1"># Counting the ones as this is the naive case. Note that &#39;income&#39; is the &#39;income_raw&#39; data </span>
@@ -12499,7 +12511,7 @@ It is a ratio of true positives(words classified as spam, and which are actually
 
 <span class="c1"># TODO: Calculate F-score using the formula above for beta = 0.5 and correct values for precision and recall.</span>
 <span class="n">beta</span> <span class="o">=</span> <span class="mf">0.5</span>
-<span class="n">fscore</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">precision</span><span class="o">*</span><span class="n">recall</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">precision</span><span class="o">*</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">recall</span><span class="p">)</span>
+<span class="n">fscore</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">precision</span><span class="o">*</span><span class="n">recall</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">precision</span><span class="o">*</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">recall</span><span class="p">)</span>
 
 <span class="c1"># Print the results </span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Naive Predictor: [Accuracy score: </span><span class="si">{:.4f}</span><span class="s2">, F-score: </span><span class="si">{:.4f}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">accuracy</span><span class="p">,</span> <span class="n">fscore</span><span class="p">))</span>
@@ -12519,9 +12531,7 @@ It is a ratio of true positives(words classified as spam, and which are actually
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>0.247843969749
-1.0
-Naive Predictor: [Accuracy score: 0.2478, F-score: 0.1750]
+<pre>Naive Predictor: [Accuracy score: 0.2478, F-score: 0.2917]
 </pre>
 </div>
 </div>
@@ -12874,7 +12884,7 @@ Based on the performance evaluation, the best algorithm seems to be the AdaBoost
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><strong>Answer: </strong> 
-I've chosen the AdaBoostClassifier as the model. It works in the following way: it creates the certain amount of DecisionTreeClassifier objects (it's set up by parameter; according to sklearn documentation, the default number is 50), it gives all the data points in the training set the certain weight (let's say 1), then it trains the DecisionTreeClassifiers on the training set one by one adjusting the weight of the misclassified points, so it fits the weight of correctly classified points. After training each of the classifiers, it builds the final solution by combining the results received from all the weak learners. The resulting classification should be pretty accurate.</p>
+I've chosen the AdaBoostClassifier as the model. It's the meta algorithm and it works by constantly running training on the simple models (we can name them as the weak learners) for classifying data and then combining the results together. It uses the DecisionTreeClassifier as the default simple model which works in a way to take a feature, which gives the most information about the decision we are trying to make, and get 2 paths out of it, e.g. if you choose that range, you go there, if you choose another one, you go with another choice, so it's pretty like human decision process works when we have 2 choices at a time.  After training each of the internal models, it builds the final solution by combining the results received from all of them. The resulting classification should be pretty accurate.</p>
 
 </div>
 </div>
@@ -13023,7 +13033,7 @@ Final F-score on the testing data: 0.7303
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><strong>Answer: </strong>
-The optimized model's accuracy on testing data is 0.86, F-score is 0.7303. These scores are a bit better than the unoptimized model. Naive predictor had Accuracy score: 0.2478, F-score: 0.1750. Based on this it can be said, that the optimized model's performance is much better than the one with Naive predictor.</p>
+The optimized model's accuracy on testing data is 0.86, F-score is 0.7303. These scores are a bit better than the unoptimized model. Naive predictor had Accuracy score: 0.2478, F-score: 0.2917. Based on this it can be said, that the optimized model's performance is much better than the one with Naive predictor.</p>
 
 </div>
 </div>
@@ -13146,7 +13156,9 @@ I would go with the following list:</p>
 <p><strong>Answer:</strong></p>
 
 <pre><code>- I missed the marital_status and used the occupation instead. Other four features are the same.
-- The visualization shows that the income most likely depends on the person's age, capital gain, hours per week, marital status and education. I agree that the combination of these features can tell a lot about the person and how much he or she earns.</code></pre>
+- The visualization shows that the income most likely depends on the person's age, capital gain, hours per week, marital status and education. 
+
+I agree that the combination of these features can tell a lot about the person and how much he or she earns. As was described in Question 6, age, capital gain, hours per week and education affect how much does the person earns. The same is true for marital status. Usually, when people get married they grow a bit, they get more responsibility which leads to seeking a better income. So it makes sence that this feature is important in building the model which predicts the possible income.</code></pre>
 
 </div>
 </div>
