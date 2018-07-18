@@ -62,9 +62,9 @@ class Robot(object):
 
     def hit_goal(self):
         '''Checks if the goal is hit by the agent.'''
-        goal_bounds = [self.maze.dim / 2 - 1, self.maze.dim / 2]
+        goal_bounds = [self.maze_dim / 2 - 1, self.maze_dim / 2]
 
-        return self.pos[0] in goal_bounds and self.pos[1] in goal_bounds
+        return self.location[0] in goal_bounds and self.location[1] in goal_bounds
 
 
 class RobotBFS(Robot):
