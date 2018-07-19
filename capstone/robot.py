@@ -1,9 +1,6 @@
 import queue
-
 import numpy as np
 
-orientations = {'u': 1, 'r': 2, 'd': 4, 'l': 8,
-                   'up': 1, 'right': 2, 'down': 4, 'left': 8}
 
 class Robot(object):
     def __init__(self, maze_dim):
@@ -40,7 +37,7 @@ class Robot(object):
         is ignored.
 
         If the robot wants to end a run (e.g. during the first training run in
-        the maze) then returing the tuple ('Reset', 'Reset') will indicate to
+        the maze) then returning the tuple ('Reset', 'Reset') will indicate to
         the tester to end the run and return the robot to the start.
         '''
         rotation = 0
@@ -79,28 +76,17 @@ class RobotBFS(Robot):
         self.rotations = np.array([-90, 0, 90])
         self.movements = np.array([i for i in range(-3,4)])
         self.frontier = queue.Queue()
-        self.move_controller = MoveController()
+
 
     def get_training_step(self, sensors):
         '''Gets the training step and updates the beleif space.'''
-        actions = self.move_controller.get_actions(sensors)
-        for a in actions:
-            self.frontier.put(a)
 
-        rotation, movement = self.frontier.get_nowait()
-
-
-        return rotation, movement, self.hit_goal()
 
     def get_step(self, sensors):
         '''Gets the optimal step.'''
         return 0, 0
 
-class MoveController():
-    def get_actions(self, sensors):
-        actions = [(0, 1), (0, -1), (90, 1), (-90, 1), (90, 0), (-90, 0)]
 
-        return actions
 
 
 
