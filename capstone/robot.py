@@ -1,6 +1,8 @@
 import queue
 import numpy as np
 
+from robot_utils import Goal, Grid, Direction
+
 
 class Robot(object):
     def __init__(self, maze_dim):
@@ -15,9 +17,10 @@ class Robot(object):
         self.heading = 'up'
         self.maze_dim = maze_dim
         self.explored_space = np.zeros([maze_dim, maze_dim], int)
-        self.explored = False
         self.training = True
-        self.orientation = 'u'
+        self.direction = Direction.U
+        self.goal = Goal(maze_dim)
+        self.grid = Grid(maze_dim, ' ')
 
     def next_move(self, sensors):
         '''
@@ -73,8 +76,7 @@ class Robot(object):
 class RobotBFS(Robot):
     def __init__(self, maze_dim):
         Robot.__init__(self, maze_dim)
-        self.rotations = np.array([-90, 0, 90])
-        self.movements = np.array([i for i in range(-3,4)])
+
         self.frontier = queue.Queue()
 
 
