@@ -1,7 +1,9 @@
 import queue
+from random import randint
+
 import numpy as np
 
-from robot_utils import Goal, Grid, Direction
+from robot_utils import Goal, Grid, Direction, SensorInterpreter, MazePerceived
 
 
 class Robot(object):
@@ -14,13 +16,25 @@ class Robot(object):
         '''
 
         self.location = [0, 0]
-        self.heading = 'up'
+        self.heading = 'u'
         self.maze_dim = maze_dim
-        self.explored_space = np.zeros([maze_dim, maze_dim], int)
+        self.explored_space = MazePerceived(maze_dim)
         self.training = True
         self.direction = Direction.U
         self.goal = Goal(maze_dim)
         self.grid = Grid(maze_dim, ' ')
+
+    def can_go(self, sensors, direction, steps):
+
+        return True
+
+    def update_location(self, direction, steps):
+        self.location =
+
+    def build_optimal_path(self):
+        # todo
+        frontier = []
+
 
     def next_move(self, sensors):
         '''
@@ -50,8 +64,13 @@ class Robot(object):
         if self.training:
             rotation, movement, done = self.get_training_step(sensors)
 
+            if self.can_go(sensors, direction, movement):
+                self.update_location(direction, movement)
+
             if done:
                 self.explored = True
+                self.location = [0,0]
+                self.build_optimal_path()
                 return 'Reset', 'Reset'
         else:
             rotation, movement = self.get_step(sensors)
@@ -89,6 +108,33 @@ class RobotBFS(Robot):
         return 0, 0
 
 
+class Exploration:
+    def __init__(self, maze_dim):
+        self.maze_dim = maze_dim
+        self.grid = Grid(maze_dim, '') # maybe need to start using another ds for exploration
+        self.location = [0, 0]
+
+    def get_step(self, sensors):
+        return 0,0
+
+class RandomMove(Exploration):
+    def __init__(self, maze_dim):
+        Exploration.__init__(self, maze_dim)
+
+    def get_step(self, sensors):
+        s = SensorInterpreter(sensors)
+        rotations = [-90, 0, 90]
+        steps = [i for i in range(-3, 4)]
+
+        rotation_idx = randint(0, len(rotations)-1)
+        rotation = rotations[rotation_idx]
+
+        step_idx = randint(0, len(steps)-1)
+        step = steps[step_idx]
+
+
+
+        return rotation, step
 
 
 
