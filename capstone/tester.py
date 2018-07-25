@@ -25,7 +25,7 @@ if __name__ == '__main__':
     testmaze = Maze( 'test_maze_01.txt') #str(sys.argv[1]) )
 
     # Intitialize a robot; robot receives info about maze dimensions.
-    testrobot = RobotBFS(testmaze.dim)
+    testrobot = Robot(testmaze.dim)
 
     # Record robot performance over two runs.
     runtimes = []
@@ -98,6 +98,8 @@ if __name__ == '__main__':
                     else:
                         print ("Movement stopped by wall.")
                         movement = 0
+
+            print(robot_pos)
 
             # check for goal entered
             goal_bounds = [testmaze.dim/2 - 1, testmaze.dim/2]

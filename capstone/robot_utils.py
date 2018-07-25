@@ -12,6 +12,8 @@ dir_move = {'u': [0, 1], 'r': [1, 0], 'd': [0, -1], 'l': [-1, 0],
 dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
                'up': 'd', 'right': 'l', 'down': 'u', 'left': 'r'}
 
+rotation_idx_dict = {-90:0, 0:1, 90:2}
+
 # integer values for directions
 dir_int_mask = {'u': 1, 'r': 2, 'd': 4, 'l': 8,
                 'up': 1, 'right': 2, 'down': 4, 'left': 8}
@@ -105,22 +107,9 @@ class SensorInterpreter:
     def is_one_way(self):
         return self.sensors[0] == 0 and self.sensors[1] > 0 and self.sensors[2] == 0
 
-    def can_go(self, direction, steps):
-        directions = ['u', 'r', 'd', 'l']
-        direction_idx_dict = {directions[i]: i for i in len(directions)}
-
-        dir_idx = direction_idx_dict[direction]
-        front = direction
-
-        left_idx = dir_idx - 1
-        if left_idx < 0:
-            left_idx = len(directions) - 1
-        left = directions[left_idx]
-
-        right_idx = dir_idx + 1
-        if right_idx >= len(directions):
-            right_idx = 0
-        right = directions[right_idx]
+    def can_go(self, steering, steps):
+        # apply steering and check number of steps
+        return self.distance(steering) >= steps
 
     def get_perceived_cell_mask(self, direction):
         """
@@ -130,7 +119,7 @@ class SensorInterpreter:
         """
 
         directions = ['u', 'r', 'd', 'l']
-        direction_idx_dict = {directions[i]: i for i in len(directions)}
+        direction_idx_dict = {directions[i]: i for i in range(len(directions))}
 
         dir_idx = direction_idx_dict[direction]
         front = direction
@@ -179,7 +168,7 @@ class Goal:
 class Grid:
     def __init__(self, shape, init_val):
         self.shape = shape
-        self.grid = [[copy.deepcopy(init_val) for c in range(shape[1])] for r in range(shape[0])]
+        #self.grid = [[copy.deepcopy(init_val) for c in range(shape[1])] for r in range(shape[0])]
 
     def __getitem___(self, row):
         return self.grid[row]
@@ -199,10 +188,10 @@ class MazePerceived:
     The representation of the maze perceived by the robot.
     """
 
-    def __init__(self, shape):
-        self.shape = shape
-        self.explored_space = np.zeros(shape, int)
-        self.explored = np.zeros(shape, int)
+    def __init__(self, dim):
+        self.shape = (dim, dim)
+        self.explored_space = np.zeros(self.shape, int)
+        self.explored = np.zeros(self.shape, int)
         self.explored_cnt = 0
 
     def update_cell(self, position, sensor, direction):
@@ -213,7 +202,8 @@ class MazePerceived:
         :param direction:
         :return:
         """
-        self.explored_space[position[0]][position[1]] |= sensor.get_perceived_cell_mask(sensor, direction)
+        s = SensorInterpreter(sensor)
+        self.explored_space[position[0]][position[1]] |= s.get_perceived_cell_mask(direction)
         self.explored[position[0]][position[1]] = 1
         self.explored_cnt += 1
 

@@ -1,9 +1,10 @@
 import queue
 from random import randint
 
-import numpy as np
+from robot_utils import Goal, Grid, Direction, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
+    Steering, dir_move, dir_reverse
 
-from robot_utils import Goal, Grid, Direction, SensorInterpreter, MazePerceived
+rotation_to_steering = {-90:Steering.L, 0:Steering.F, 90:Steering.R}
 
 
 class Robot(object):
@@ -15,21 +16,43 @@ class Robot(object):
         the robot is placed in.
         '''
 
-        self.location = [0, 0]
-        self.heading = 'u'
+        self.robot_pos = self.get_initial_robot_pos()
         self.maze_dim = maze_dim
         self.explored_space = MazePerceived(maze_dim)
         self.training = True
         self.direction = Direction.U
         self.goal = Goal(maze_dim)
-        self.grid = Grid(maze_dim, ' ')
+        #self.grid = Grid(maze_dim, ' ')
+        self.exploration = RandomMove(maze_dim)
 
-    def can_go(self, sensors, direction, steps):
+    def get_initial_robot_pos(self):
+        return {'location': [0, 0], 'heading': 'up'}
 
-        return True
+    def can_go(self, rotation, movement):
+        return True # todo implement
 
-    def update_location(self, direction, steps):
-        self.location =
+    def update_location(self, rotation, movement):
+        s = rotation_to_steering[rotation]
+
+        movement = max(min(int(movement), 3), -3)  # fix to range [-3, 3]
+        while movement:
+            if movement > 0:
+                if self.can_go(rotation, movement):
+                    self.robot_pos['location'][0] += dir_move[self.robot_pos['heading']][0]
+                    self.robot_pos['location'][1] += dir_move[self.robot_pos['heading']][1]
+                    movement -= 1
+                else:
+                    print("Movement stopped by wall.")
+                    movement = 0
+            else:
+                rev_heading = dir_reverse[self.robot_pos['heading']]
+                if self.can_go(rotation, movement):
+                    self.robot_pos['location'][0] += dir_move[rev_heading][0]
+                    self.robot_pos['location'][1] += dir_move[rev_heading][1]
+                    movement += 1
+                else:
+                    print("Movement stopped by wall.")
+                    movement = 0
 
     def build_optimal_path(self):
         # todo
@@ -64,13 +87,22 @@ class Robot(object):
         if self.training:
             rotation, movement, done = self.get_training_step(sensors)
 
-            if self.can_go(sensors, direction, movement):
-                self.update_location(direction, movement)
+            # obtain direction from heading and rotation values
+            direction = dir_sensors[self.robot_pos['heading']][rotation_idx_dict[rotation]]
+
+            #self.explored_space.update_cell(self.robot_pos['location'], sensors, direction)
+
+            #print ("perceived position is: {}".format(self.robot_pos))
+
+            s = SensorInterpreter(sensors)
+
+            if self.can_go(rotation, movement):
+                self.update_location(rotation, movement)
 
             if done:
-                self.explored = True
-                self.location = [0,0]
+                self.robot_pos = self.get_initial_robot_pos()
                 self.build_optimal_path()
+                self.training = False
                 return 'Reset', 'Reset'
         else:
             rotation, movement = self.get_step(sensors)
@@ -79,7 +111,9 @@ class Robot(object):
 
     def get_training_step(self, sensors):
         '''Gets the training step and updates the beleif space.'''
-        return 0,0,True
+        rotation, movement = self.exploration.get_step(sensors)
+        done = self.explored_space.is_explored()
+        return rotation, movement, done
 
     def get_step(self, sensors):
         '''Gets the optimal step.'''
@@ -117,22 +151,20 @@ class Exploration:
     def get_step(self, sensors):
         return 0,0
 
+
 class RandomMove(Exploration):
     def __init__(self, maze_dim):
         Exploration.__init__(self, maze_dim)
 
     def get_step(self, sensors):
-        s = SensorInterpreter(sensors)
         rotations = [-90, 0, 90]
-        steps = [i for i in range(-3, 4)]
+        steps = [i for i in range(1, 3)]
 
         rotation_idx = randint(0, len(rotations)-1)
         rotation = rotations[rotation_idx]
 
         step_idx = randint(0, len(steps)-1)
         step = steps[step_idx]
-
-
 
         return rotation, step
 
