@@ -2,10 +2,7 @@ import queue
 from random import randint
 
 from robot_utils import Goal, Grid, Direction, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
-    Steering, dir_move, dir_reverse
-
-rotation_to_steering = {-90:Steering.L, 0:Steering.F, 90:Steering.R}
-
+    dir_move, dir_reverse
 
 class Robot(object):
     def __init__(self, maze_dim):
@@ -18,12 +15,9 @@ class Robot(object):
 
         self.robot_pos = self.get_initial_robot_pos()
         self.maze_dim = maze_dim
-        self.explored_space = MazePerceived(maze_dim)
         self.training = True
-        self.direction = Direction.U
         self.goal = Goal(maze_dim)
-        #self.grid = Grid(maze_dim, ' ')
-        self.exploration = RandomMove(maze_dim)
+        self.exploration = RandomMoveWallsDetection(self, maze_dim)
 
     def get_initial_robot_pos(self):
         return {'location': [0, 0], 'heading': 'up'}
@@ -31,28 +25,27 @@ class Robot(object):
     def can_go(self, rotation, movement):
         return True # todo implement
 
-    def update_location(self, rotation, movement):
-        s = rotation_to_steering[rotation]
+    def update_position(self, sensor, rotation, movement):
+        steps_available = sensor[rotation_idx_dict[rotation]]
 
-        movement = max(min(int(movement), 3), -3)  # fix to range [-3, 3]
+        # update heading based on the rotation values
+        self.robot_pos['heading'] = dir_sensors[self.robot_pos['heading']][rotation_idx_dict[rotation]]
+
+        # update location then
+        movement = min(max(min(int(movement), 3), -3), steps_available)  # fix to range [-3, 3]
+
         while movement:
             if movement > 0:
                 if self.can_go(rotation, movement):
                     self.robot_pos['location'][0] += dir_move[self.robot_pos['heading']][0]
                     self.robot_pos['location'][1] += dir_move[self.robot_pos['heading']][1]
                     movement -= 1
-                else:
-                    print("Movement stopped by wall.")
-                    movement = 0
             else:
                 rev_heading = dir_reverse[self.robot_pos['heading']]
                 if self.can_go(rotation, movement):
                     self.robot_pos['location'][0] += dir_move[rev_heading][0]
                     self.robot_pos['location'][1] += dir_move[rev_heading][1]
                     movement += 1
-                else:
-                    print("Movement stopped by wall.")
-                    movement = 0
 
     def build_optimal_path(self):
         # todo
@@ -87,17 +80,9 @@ class Robot(object):
         if self.training:
             rotation, movement, done = self.get_training_step(sensors)
 
-            # obtain direction from heading and rotation values
-            direction = dir_sensors[self.robot_pos['heading']][rotation_idx_dict[rotation]]
+            print ("perceived position is: {}".format(self.robot_pos))
 
-            #self.explored_space.update_cell(self.robot_pos['location'], sensors, direction)
-
-            #print ("perceived position is: {}".format(self.robot_pos))
-
-            s = SensorInterpreter(sensors)
-
-            if self.can_go(rotation, movement):
-                self.update_location(rotation, movement)
+            self.update_position(sensors, rotation, movement)
 
             if done:
                 self.robot_pos = self.get_initial_robot_pos()
@@ -112,7 +97,7 @@ class Robot(object):
     def get_training_step(self, sensors):
         '''Gets the training step and updates the beleif space.'''
         rotation, movement = self.exploration.get_step(sensors)
-        done = self.explored_space.is_explored()
+        done = self.exploration.is_explored()
         return rotation, movement, done
 
     def get_step(self, sensors):
@@ -143,22 +128,26 @@ class RobotBFS(Robot):
 
 
 class Exploration:
-    def __init__(self, maze_dim):
+    def __init__(self, robot, maze_dim):
         self.maze_dim = maze_dim
-        self.grid = Grid(maze_dim, '') # maybe need to start using another ds for exploration
-        self.location = [0, 0]
+        self.robot = robot
+        #self.grid = Grid(maze_dim, '') # maybe need to start using another ds for exploration
+        self.explored_space = MazePerceived(maze_dim)
 
     def get_step(self, sensors):
         return 0,0
 
+    def is_explored(self):
+        return self.explored_space.is_explored()
 
-class RandomMove(Exploration):
-    def __init__(self, maze_dim):
-        Exploration.__init__(self, maze_dim)
+
+class BlindRandomMove(Exploration):
+    def __init__(self, robot, maze_dim):
+        Exploration.__init__(self, robot, maze_dim)
 
     def get_step(self, sensors):
         rotations = [-90, 0, 90]
-        steps = [i for i in range(1, 3)]
+        steps = [i for i in range(1,2)]
 
         rotation_idx = randint(0, len(rotations)-1)
         rotation = rotations[rotation_idx]
@@ -166,8 +155,26 @@ class RandomMove(Exploration):
         step_idx = randint(0, len(steps)-1)
         step = steps[step_idx]
 
+        self.explored_space.update_cell(self.robot.robot_pos, sensors)
+
         return rotation, step
 
 
+class RandomMoveWallsDetection(BlindRandomMove):
+    def __init__(self, robot, maze_dim):
+        BlindRandomMove.__init__(self, robot, maze_dim)
 
+    def get_step(self, sensors):
+        can_go = False
+
+        while not can_go:
+            rotation, movement = BlindRandomMove.get_step(self, sensors)
+
+            if self.is_permissible(rotation, movement):
+                can_go = True
+
+        return rotation, movement
+
+    def is_permissible(self, rotation, movement):
+        return self.robot.can_go(rotation, movement)
 

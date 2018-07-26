@@ -99,10 +99,10 @@ if __name__ == '__main__':
                         print ("Movement stopped by wall.")
                         movement = 0
 
-            print(robot_pos)
+            print(robot_pos['location'])
 
             # check for goal entered
-            goal_bounds = [testmaze.dim/2 - 1, testmaze.dim/2]
+            goal_bounds = [int(testmaze.dim/2) - 1, int(testmaze.dim/2)]
             if robot_pos['location'][0] in goal_bounds and robot_pos['location'][1] in goal_bounds:
                 hit_goal = True
                 if run != 0:

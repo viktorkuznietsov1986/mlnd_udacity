@@ -19,43 +19,22 @@ dir_int_mask = {'u': 1, 'r': 2, 'd': 4, 'l': 8,
                 'up': 1, 'right': 2, 'down': 4, 'left': 8}
 
 
-class Steering(Enum):
-    '''
-    Enum class for changing direction.
-    '''
-    L, F, R = (-1, 0, 1)  # Go left, front, right.
-
-    def __str__(self):
-        return self.name
-
-
-class Direction(Enum):
-    '''
-    Enum class encapsulating the heading direction.
-    '''
-    U, R, D, L = range(4)  # up, right, down, left.
+class Direction:
+    def __init__(self, direction):
+        self.direction = direction
 
     def reverse(self):
-        return Direction((self.value + 2) % 4)
+        return Direction(dir_reverse[self.direction])
 
-    def change(self, steering):
-        return Direction((self.value + steering.value) % 4)
+    def change(self, rotation):
+        rotation_idx = rotation_idx_dict[rotation]
+        return Direction(dir_sensors[self.direction][rotation_idx])
 
     def dir_move(self):
-        return dir_move[self.value]
-
-    def change_direction(self, steering):
-        diff = steering.value - self.value
-
-        if diff == 3:
-            diff = -1
-        elif diff == -3:
-            diff = 1
-
-        return Steering(diff)
+        return dir_move[self.direction]
 
     def __str__(self):
-        return self.name
+        return self.direction
 
 
 class Heading:
@@ -66,20 +45,20 @@ class Heading:
     def __str__(self):
         return '{} at ({},{})'.format(self.direction.name, self.pos[0], self.pos[1])
 
-    def change(self, steering, steps):
-        direction = self.direction.change(steering)
+    def change(self, rotation, movement):
+        direction = self.direction.change(rotation)
         direction_move = direction.dir_move()
-        pos = [self.pos[i] * direction_move[i] * steps for i in range(2)]
+        pos = [self.pos[i] * direction_move[i] * movement for i in range(2)]
         return Heading(direction, pos)
 
     def move_forward(self, steps=1):
-        return self.change(Steering.F, steps)
+        return self.change(0, steps)
 
     def move_left(self, steps=1):
-        return self.change(Steering.L, steps)
+        return self.change(-90, steps)
 
     def move_right(self, steps=1):
-        return self.change(Steering.R, steps)
+        return self.change(90, steps)
 
     def move_backward(self, steps=1):
         return self.reverse().move_forward(steps)
@@ -92,14 +71,8 @@ class SensorInterpreter:
     def __init__(self, sensors):
         self.sensors = sensors
 
-    def distance(self, steering):
-        steering_sensor_idx = {
-            Steering.L: 0,
-            Steering.F: 1,
-            Steering.R: 2
-        }
-
-        return self.sensors[steering_sensor_idx[steering]]
+    def distance(self, rotation):
+        return self.sensors[rotation_idx_dict[rotation]]
 
     def is_dead_end(self):
         return max(self.sensors) == 0
@@ -107,9 +80,9 @@ class SensorInterpreter:
     def is_one_way(self):
         return self.sensors[0] == 0 and self.sensors[1] > 0 and self.sensors[2] == 0
 
-    def can_go(self, steering, steps):
+    def can_go(self, rotation, movement):
         # apply steering and check number of steps
-        return self.distance(steering) >= steps
+        return self.distance(rotation) >= movement
 
     def get_perceived_cell_mask(self, direction):
         """
@@ -194,17 +167,17 @@ class MazePerceived:
         self.explored = np.zeros(self.shape, int)
         self.explored_cnt = 0
 
-    def update_cell(self, position, sensor, direction):
-        """
-        Update the cell with the walls and mark it as explored.
-        :param position:
-        :param sensor:
-        :param direction:
-        :return:
-        """
-        s = SensorInterpreter(sensor)
-        self.explored_space[position[0]][position[1]] |= s.get_perceived_cell_mask(direction)
-        self.explored[position[0]][position[1]] = 1
+    def update_cell(self, robot_pos, sensor):
+
+        mask = 0
+        sensor_heading = dir_sensors[robot_pos['heading']]
+
+        for i in range(len(sensor)):
+            if sensor[i] == 0:
+                mask |= dir_int_mask[sensor_heading[i]]
+
+        self.explored_space[robot_pos['location'][0]][robot_pos['location'][1]] |= mask
+        self.explored[robot_pos['location'][0]][robot_pos['location'][1]] = 1
         self.explored_cnt += 1
 
     def get_cell(self, position):
@@ -224,7 +197,7 @@ class MazePerceived:
         return self.explored[position[0]][position[1]] == 1
 
     def is_explored(self):
-        goal_bounds = [self.shape[0] / 2 - 1, self.shape[0] / 2]
+        goal_bounds = [int(self.shape[0] / 2) - 1, int(self.shape[0] / 2)]
 
         if self.explored_cnt < (self.shape[0] ** 2) / 2:
             return False
@@ -233,3 +206,15 @@ class MazePerceived:
                or self.check_cell_explored([goal_bounds[0], goal_bounds[1]]) \
                or self.check_cell_explored([goal_bounds[1], goal_bounds[0]]) \
                or self.check_cell_explored([goal_bounds[1], goal_bounds[1]])
+
+    def is_permissible(self, cell, direction):
+        """
+        Returns a boolean designating whether or not a cell is passable in the
+        given direction. Cell is input as a list. Directions may be
+        input as single letter 'u', 'r', 'd', 'l', or complete words 'up',
+        'right', 'down', 'left'.
+        """
+        try:
+            return (self.explored_space[tuple(cell)] & dir_int_mask[direction] != 0)
+        except:
+            print ('Invalid direction provided!')
