@@ -1,4 +1,6 @@
 import copy
+from asyncio import Queue
+
 import numpy as np
 from enum import Enum
 
@@ -218,3 +220,135 @@ class MazePerceived:
             return (self.explored_space[tuple(cell)] & dir_int_mask[direction] != 0)
         except:
             print ('Invalid direction provided!')
+
+
+class Edge:
+    def __init__(self, direction, w, u, v, contains_goal):
+        self.direction = direction
+        self.w = w
+        self.u = u
+        self.v = v
+        self.contains_goal = contains_goal
+
+    def either(self):
+        return self.u
+
+    def other(self, u):
+        if u == self.u:
+            return self.v
+
+        return self.u
+
+    def weight(self):
+        return self.w
+
+    def direction(self):
+        return self.direction
+
+    def contains_goal(self):
+        return self.contains_goal()
+
+class Graph:
+    def __init__(self, dim):
+        self.dim = dim
+        self.edges = np.empty(dim)
+        self.edges_count = 0
+
+    def is_connected(self, u, v):
+        if self.edges[u] is None or self.edges[v] is None:
+            return False
+
+        for e in self.edges[u]:
+            if e.either() == v or e.other(u) == v:
+                return True
+
+        return False
+
+    def connect(self, u, v, w, direction):
+        if not self.is_connected(u,w):
+            self.edges[v] = Edge(direction, u, v, w)
+            self.edges[u] = Edge(dir_reverse[direction], v, u, w)
+            self.edges_count += 2
+
+
+class GraphSearch:
+    class Node:
+        def __init__(self, parent, edge):
+            self.parent = parent
+            self.edge = edge
+
+    def __init__(self, graph, starting_point=0):
+        self.graph = graph
+        self.starting_point = starting_point
+        self.visited = [False for i in range(graph.dim)]
+        self.path = []
+        self.search()
+
+    def search(self):
+        node = self.build_node()
+        return self.convert_node_to_path(node)
+
+    def build_node(self):
+        raise NotImplemented
+
+    @staticmethod
+    def convert_node_to_path(node):
+        path = []
+
+        while node is not None:
+            obj_to_add = (node.edge.direction)
+            path.append()
+
+            node = node.parent
+
+        return path
+
+    def path(self):
+        return self.path
+
+
+class BFS(GraphSearch):
+    def __init__(self, graph, starting_point=0):
+        GraphSearch.__init__(self, graph, starting_point)
+
+    def build_node(self):
+        frontier = Queue()
+
+        for e in self.graph.edges[self.starting_point]:
+            frontier.put(GraphSearch.Node(None, e))
+
+        self.visited[self.starting_point] = True
+
+        while not frontier.empty():
+            n = frontier.get_nowait()
+            e = n.edge
+
+            u = e.either()
+            v = e.other(u)
+
+            if e.contains_goal():
+                return n
+
+            if self.visited[u] and self.visited[v]:
+                continue
+
+            vertex = u
+            if self.visited[u]:
+                vertex = v
+
+            self.visited[vertex] = True
+
+            for e in self.graph.edges[vertex]:
+                if not self.visited[e.other[vertex]]:
+                    frontier.put(GraphSearch.Node(n, e))
+
+        return None
+
+
+
+
+
+
+
+
+
