@@ -248,6 +248,7 @@ class Edge:
     def contains_goal(self):
         return self.contains_goal()
 
+
 class Graph:
     def __init__(self, dim):
         self.dim = dim
@@ -292,13 +293,50 @@ class GraphSearch:
         raise NotImplemented
 
     @staticmethod
-    def convert_node_to_path(node):
+    def convert_directions_to_rotation(previous_direction, current_direction):
+        if previous_direction == current_direction:
+            return 0
+
+        directions = dir_sensors[previous_direction]
+
+        if current_direction == directions[0]:
+            return -90
+        elif current_direction == directions[2]:
+            return 90
+
+        return 180
+
+    def convert_node_to_path(self, node):
         path = []
 
-        while node is not None:
-            obj_to_add = (node.edge.direction)
-            path.append()
+        start = node
+        previous_direction = start.edge.direction()
 
+        node = node.parent
+
+        while node is not None:
+            current_direction = node.edge.direction()
+
+            if len(path) == 0:
+                object_to_add = (0, 1)
+                path.append(object_to_add)
+            else:
+                if current_direction == previous_direction:
+                    if path[0][1] < 3:
+                        path[0][1] += 1
+                    else:
+                        rotation = path[0][0]
+                        movement = 1
+                        path[0][0] = 0
+                        object_to_add = (rotation, movement)
+                        path.append(object_to_add)
+                else:
+                    rotation = self.convert_directions_to_rotation(previous_direction, current_direction)
+                    movement = 1
+                    obj_to_add = (rotation, movement)
+                    path.append(obj_to_add)
+
+            previous_direction = current_direction
             node = node.parent
 
         return path
