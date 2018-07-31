@@ -165,16 +165,24 @@ class RandomMoveWallsDetection(BlindRandomMove):
         BlindRandomMove.__init__(self, robot, maze_dim)
 
     def get_step(self, sensors):
+        s = SensorInterpreter(sensors)
+
+        if s.is_dead_end():
+            return 90,0
+
         can_go = False
 
         while not can_go:
             rotation, movement = BlindRandomMove.get_step(self, sensors)
 
-            if self.is_permissible(rotation, movement):
+            if self.is_permissible(sensors, rotation, movement):
                 can_go = True
 
         return rotation, movement
 
-    def is_permissible(self, rotation, movement):
-        return self.robot.can_go(rotation, movement)
+    def is_permissible(self, sensors, rotation, movement):
+        if movement <= 0:
+            return True
 
+        s = SensorInterpreter(sensors)
+        return  s.distance(rotation) >= movement
