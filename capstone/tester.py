@@ -1,5 +1,7 @@
+import sys
+
 from maze import Maze
-from robot import Robot, RobotBFS
+from robot import Robot, RobotBFS, RobotFactory
 
 # global dictionaries for robot movement and sensing
 dir_sensors = {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
@@ -22,10 +24,10 @@ if __name__ == '__main__':
     '''
 
     # Create a maze based on input argument on command line.
-    testmaze = Maze( 'test_maze_01.txt') #str(sys.argv[1]) )
+    testmaze = Maze(str(sys.argv[1]))
 
     # Intitialize a robot; robot receives info about maze dimensions.
-    testrobot = RobotBFS(testmaze.dim)
+    testrobot = RobotFactory(testmaze.dim).get_robot(str(sys.argv[2]))
 
     # Record robot performance over two runs.
     runtimes = []

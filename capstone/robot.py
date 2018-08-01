@@ -131,6 +131,17 @@ class RobotBFS(Robot):
         print (self.path)
 
 
+class RobotFactory:
+    def __init__(self, maze_dim):
+        self.maze_dim = maze_dim
+
+    def get_robot(self, robot_type):
+        if robot_type == 'bfs':
+            return RobotBFS(self.maze_dim)
+        else:
+            return None
+
+
 class Exploration:
     def __init__(self, robot, maze_dim):
         self.maze_dim = maze_dim
