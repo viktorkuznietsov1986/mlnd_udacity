@@ -2,7 +2,8 @@ import queue
 from random import randint
 
 from robot_utils import Goal, Grid, Direction, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
-    dir_move, dir_reverse
+    dir_move, dir_reverse, Graph, BFS
+
 
 class Robot(object):
     def __init__(self, maze_dim):
@@ -18,12 +19,15 @@ class Robot(object):
         self.training = True
         self.goal = Goal(maze_dim)
         self.exploration = RandomMoveWallsDetection(self, maze_dim)
+        self.maze_graph = Graph(maze_dim*maze_dim)
+        self.path = None
+        self.path_idx = 0
 
     def get_initial_robot_pos(self):
         return {'location': [0, 0], 'heading': 'up'}
 
-    def can_go(self, rotation, movement):
-        return True # todo implement
+    def robot_position_2_graph_vertex(self):
+        return int(int(self.robot_pos['location'][1]*self.maze_dim) + self.robot_pos['location'][0])
 
     def update_position(self, sensor, rotation, movement):
         steps_available = sensor[rotation_idx_dict[rotation]]
@@ -34,23 +38,26 @@ class Robot(object):
         # update location then
         movement = min(max(min(int(movement), 3), -3), steps_available)  # fix to range [-3, 3]
 
+        u = self.robot_position_2_graph_vertex()
+
         while movement:
             if movement > 0:
-                if self.can_go(rotation, movement):
-                    self.robot_pos['location'][0] += dir_move[self.robot_pos['heading']][0]
-                    self.robot_pos['location'][1] += dir_move[self.robot_pos['heading']][1]
-                    movement -= 1
+                self.robot_pos['location'][0] += dir_move[self.robot_pos['heading']][0]
+                self.robot_pos['location'][1] += dir_move[self.robot_pos['heading']][1]
+                movement -= 1
             else:
                 rev_heading = dir_reverse[self.robot_pos['heading']]
-                if self.can_go(rotation, movement):
-                    self.robot_pos['location'][0] += dir_move[rev_heading][0]
-                    self.robot_pos['location'][1] += dir_move[rev_heading][1]
-                    movement += 1
+                self.robot_pos['location'][0] += dir_move[rev_heading][0]
+                self.robot_pos['location'][1] += dir_move[rev_heading][1]
+                movement += 1
+
+            v = self.robot_position_2_graph_vertex()
+
+            self.maze_graph.connect(u, v, 1, self.robot_pos['heading'])
+            u = v
 
     def build_optimal_path(self):
-        # todo
-        frontier = []
-
+        raise NotImplemented
 
     def next_move(self, sensors):
         '''
@@ -102,7 +109,9 @@ class Robot(object):
 
     def get_step(self, sensors):
         '''Gets the optimal step.'''
-        return 0,0
+        path = self.path[self.path_idx]
+        self.path_idx += 1
+        return path
 
     def hit_goal(self):
         '''Checks if the goal is hit by the agent.'''
@@ -117,14 +126,10 @@ class RobotBFS(Robot):
 
         self.frontier = queue.Queue()
 
-
-    def get_training_step(self, sensors):
-        '''Gets the training step and updates the beleif space.'''
-
-
-    def get_step(self, sensors):
-        '''Gets the optimal step.'''
-        return 0, 0
+    def build_optimal_path(self):
+        bfs = BFS(self.maze_graph)
+        bfs.search()
+        self.path = bfs.path()
 
 
 class Exploration:
