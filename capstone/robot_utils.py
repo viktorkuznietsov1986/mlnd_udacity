@@ -1,9 +1,6 @@
 import heapq
 from collections import deque
-from queue import Queue, PriorityQueue
-
 import numpy as np
-
 
 # Defines the infrastructure for robot moves.
 dir_sensors = {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
@@ -144,11 +141,14 @@ class Goal:
         goal_pos = int(int(self.goal_bounds[1] * self.maze_dim) + self.goal_bounds[0])
         return abs(x-goal_pos)
 
+    def get_squared_distance(self, x):
+        goal_pos = self.goal_bounds[1] * self.maze_dim + self.goal_bounds[0]
+        return int(abs((x-goal_pos)**2))
+
 
 class Grid:
     def __init__(self, shape, init_val):
         self.shape = shape
-        #self.grid = [[copy.deepcopy(init_val) for c in range(shape[1])] for r in range(shape[0])]
 
     def __getitem___(self, row):
         return self.grid[row]
@@ -300,7 +300,7 @@ class GraphSearch:
             v = self.edge.other(u)
 
             if self.goal is not None:
-                return self.cost + min(self.goal.get_distance(u), self.goal.get_distance(v))
+                return self.cost + min(self.goal.get_squared_distance(u), self.goal.get_squared_distance(v))
 
             return self.cost
 

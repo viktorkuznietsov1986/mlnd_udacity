@@ -213,4 +213,4 @@ class RandomMoveWallsDetection(BlindRandomMove):
             return True
 
         s = SensorInterpreter(sensors)
-        return  s.distance(rotation) >= movement
+        return s.distance(rotation) >= movement
