@@ -53,7 +53,7 @@ class Robot(object):
 
             v = self.robot_position_2_graph_vertex()
 
-            self.maze_graph.connect(u, v, 1, self.robot_pos['heading'])
+            self.maze_graph.connect(u, v, 1, self.robot_pos['heading'], self.hit_goal())
             u = v
 
     def build_optimal_path(self):
@@ -93,8 +93,8 @@ class Robot(object):
 
             if done:
                 self.robot_pos = self.get_initial_robot_pos()
-                self.build_optimal_path()
                 self.training = False
+                self.build_optimal_path()
                 return 'Reset', 'Reset'
         else:
             rotation, movement = self.get_step(sensors)
@@ -109,27 +109,26 @@ class Robot(object):
 
     def get_step(self, sensors):
         '''Gets the optimal step.'''
-        path = self.path[self.path_idx]
+        step = self.path[self.path_idx]
         self.path_idx += 1
-        return path
+        return step
 
     def hit_goal(self):
         '''Checks if the goal is hit by the agent.'''
-        goal_bounds = [self.maze_dim / 2 - 1, self.maze_dim / 2]
+        goal_bounds = [int(self.maze_dim / 2) - 1, int(self.maze_dim / 2)]
 
-        return self.location[0] in goal_bounds and self.location[1] in goal_bounds
+        return self.robot_pos['location'][0] in goal_bounds and self.robot_pos['location'][1] in goal_bounds
 
 
 class RobotBFS(Robot):
     def __init__(self, maze_dim):
         Robot.__init__(self, maze_dim)
 
-        self.frontier = queue.Queue()
-
     def build_optimal_path(self):
         bfs = BFS(self.maze_graph)
         bfs.search()
-        self.path = bfs.path()
+        self.path = bfs.path
+        print (self.path)
 
 
 class Exploration:

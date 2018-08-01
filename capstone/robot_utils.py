@@ -1,8 +1,8 @@
-import copy
-from asyncio import Queue
+from collections import deque
+from queue import Queue
 
 import numpy as np
-from enum import Enum
+
 
 # Defines the infrastructure for robot moves.
 dir_sensors = {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
@@ -223,7 +223,7 @@ class MazePerceived:
 
 
 class Edge:
-    def __init__(self, direction, w, u, v, contains_goal):
+    def __init__(self, direction, u, v, w, contains_goal):
         self.direction = direction
         self.w = w
         self.u = u
@@ -252,7 +252,7 @@ class Edge:
 class Graph:
     def __init__(self, dim):
         self.dim = dim
-        self.edges = np.empty(dim)
+        self.edges = np.empty(dim, dtype=list)
         self.edges_count = 0
 
     def is_connected(self, u, v):
@@ -265,10 +265,20 @@ class Graph:
 
         return False
 
-    def connect(self, u, v, w, direction):
+    def connect(self, u, v, w, direction, contains_goal):
         if not self.is_connected(u,w):
-            self.edges[v] = Edge(direction, u, v, w)
-            self.edges[u] = Edge(dir_reverse[direction], v, u, w)
+            edge_v = Edge(direction, u, v, w, contains_goal)
+            edge_u = Edge(dir_reverse[direction], v, u, w, contains_goal)
+
+            if self.edges[v] is None:
+                self.edges[v] = []
+
+            if self.edges[u] is None:
+                self.edges[u] = []
+
+            self.edges[v].append(edge_v)
+            self.edges[u].append(edge_u)
+
             self.edges_count += 2
 
 
@@ -283,11 +293,10 @@ class GraphSearch:
         self.starting_point = starting_point
         self.visited = [False for i in range(graph.dim)]
         self.path = []
-        self.search()
 
     def search(self):
         node = self.build_node()
-        return self.convert_node_to_path(node)
+        self.path = self.convert_node_to_path(node)
 
     def build_node(self):
         raise NotImplemented
@@ -300,26 +309,23 @@ class GraphSearch:
         directions = dir_sensors[previous_direction]
 
         if current_direction == directions[0]:
-            return -90
-        elif current_direction == directions[2]:
             return 90
+        elif current_direction == directions[2]:
+            return -90
 
         return 180
 
     def convert_node_to_path(self, node):
         path = []
 
-        start = node
-        previous_direction = start.edge.direction()
-
-        node = node.parent
+        previous_direction = node.edge.direction
 
         while node is not None:
-            current_direction = node.edge.direction()
+            current_direction = node.edge.direction
 
             if len(path) == 0:
-                object_to_add = (0, 1)
-                path.append(object_to_add)
+                object_to_add = [0, 1]
+                path.insert(0, object_to_add)
             else:
                 if current_direction == previous_direction:
                     if path[0][1] < 3:
@@ -328,13 +334,15 @@ class GraphSearch:
                         rotation = path[0][0]
                         movement = 1
                         path[0][0] = 0
-                        object_to_add = (rotation, movement)
-                        path.append(object_to_add)
+                        object_to_add = [rotation, movement]
+                        path.insert(0, object_to_add)
                 else:
                     rotation = self.convert_directions_to_rotation(previous_direction, current_direction)
+                    path[0][0] = rotation
+                    rotation = 0
                     movement = 1
-                    obj_to_add = (rotation, movement)
-                    path.append(obj_to_add)
+                    obj_to_add = [rotation, movement]
+                    path.insert(0, obj_to_add)
 
             previous_direction = current_direction
             node = node.parent
@@ -342,6 +350,7 @@ class GraphSearch:
         return path
 
     def path(self):
+        print(self.path)
         return self.path
 
 
@@ -350,21 +359,21 @@ class BFS(GraphSearch):
         GraphSearch.__init__(self, graph, starting_point)
 
     def build_node(self):
-        frontier = Queue()
+        frontier = deque()
 
         for e in self.graph.edges[self.starting_point]:
-            frontier.put(GraphSearch.Node(None, e))
+            frontier.append(GraphSearch.Node(None, e))
 
         self.visited[self.starting_point] = True
 
-        while not frontier.empty():
-            n = frontier.get_nowait()
+        while len(frontier) > 0:
+            n = frontier.popleft()
             e = n.edge
 
             u = e.either()
             v = e.other(u)
 
-            if e.contains_goal():
+            if e.contains_goal:
                 return n
 
             if self.visited[u] and self.visited[v]:
@@ -377,8 +386,8 @@ class BFS(GraphSearch):
             self.visited[vertex] = True
 
             for e in self.graph.edges[vertex]:
-                if not self.visited[e.other[vertex]]:
-                    frontier.put(GraphSearch.Node(n, e))
+                if not self.visited[e.other(vertex)]:
+                    frontier.append(GraphSearch.Node(n, e))
 
         return None
 

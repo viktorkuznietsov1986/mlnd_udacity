@@ -25,7 +25,7 @@ if __name__ == '__main__':
     testmaze = Maze( 'test_maze_01.txt') #str(sys.argv[1]) )
 
     # Intitialize a robot; robot receives info about maze dimensions.
-    testrobot = Robot(testmaze.dim)
+    testrobot = RobotBFS(testmaze.dim)
 
     # Record robot performance over two runs.
     runtimes = []
