@@ -1,5 +1,6 @@
+import heapq
 from collections import deque
-from queue import Queue
+from queue import Queue, PriorityQueue
 
 import numpy as np
 
@@ -128,6 +129,7 @@ class SensorInterpreter:
 class Goal:
     def __init__(self, maze_dim):
         self.maze_dim = maze_dim
+        self.goal_bounds = [int(self.maze_dim / 2) - 1, int(self.maze_dim / 2)]
 
     def hit_goal(self, location):
         '''
@@ -135,9 +137,12 @@ class Goal:
         :param location:
         :return:
         '''
-        goal_bounds = [self.maze_dim / 2 - 1, self.maze_dim / 2]
+        return location[0] in self.goal_bounds and location[1] in self.goal_bounds
 
-        return location[0] in goal_bounds and location[1] in goal_bounds
+    def get_distance(self, x):
+        # returns the distance to the minimum distance to the goal
+        goal_pos = int(int(self.goal_bounds[1] * self.maze_dim) + self.goal_bounds[0])
+        return abs(x-goal_pos)
 
 
 class Grid:
@@ -284,9 +289,23 @@ class Graph:
 
 class GraphSearch:
     class Node:
-        def __init__(self, parent, edge):
+        def __init__(self, parent, edge, cost=1, goal=None):
             self.parent = parent
             self.edge = edge
+            self.cost = cost
+            self.goal = goal
+
+        def get_cost(self):
+            u = self.edge.either()
+            v = self.edge.other(u)
+
+            if self.goal is not None:
+                return self.cost + min(self.goal.get_distance(u), self.goal.get_distance(v))
+
+            return self.cost
+
+        def __lt__(self, other):
+            return self.get_cost() < other.get_cost()
 
     def __init__(self, graph, starting_point=0):
         self.graph = graph
@@ -318,34 +337,35 @@ class GraphSearch:
     def convert_node_to_path(self, node):
         path = []
 
-        previous_direction = node.edge.direction
+        if node is not None:
+            previous_direction = node.edge.direction
 
-        while node is not None:
-            current_direction = node.edge.direction
+            while node is not None:
+                current_direction = node.edge.direction
 
-            if len(path) == 0:
-                object_to_add = [0, 1]
-                path.insert(0, object_to_add)
-            else:
-                if current_direction == previous_direction:
-                    if path[0][1] < 3:
-                        path[0][1] += 1
-                    else:
-                        rotation = path[0][0]
-                        movement = 1
-                        path[0][0] = 0
-                        object_to_add = [rotation, movement]
-                        path.insert(0, object_to_add)
+                if len(path) == 0:
+                    object_to_add = [0, 1]
+                    path.insert(0, object_to_add)
                 else:
-                    rotation = self.convert_directions_to_rotation(previous_direction, current_direction)
-                    path[0][0] = rotation
-                    rotation = 0
-                    movement = 1
-                    obj_to_add = [rotation, movement]
-                    path.insert(0, obj_to_add)
+                    if current_direction == previous_direction:
+                        if path[0][1] < 3:
+                            path[0][1] += 1
+                        else:
+                            rotation = path[0][0]
+                            movement = 1
+                            path[0][0] = 0
+                            object_to_add = [rotation, movement]
+                            path.insert(0, object_to_add)
+                    else:
+                        rotation = self.convert_directions_to_rotation(previous_direction, current_direction)
+                        path[0][0] = rotation
+                        rotation = 0
+                        movement = 1
+                        obj_to_add = [rotation, movement]
+                        path.insert(0, obj_to_add)
 
-            previous_direction = current_direction
-            node = node.parent
+                previous_direction = current_direction
+                node = node.parent
 
         return path
 
@@ -388,6 +408,48 @@ class BFS(GraphSearch):
             for e in self.graph.edges[vertex]:
                 if not self.visited[e.other(vertex)]:
                     frontier.append(GraphSearch.Node(n, e))
+
+        return None
+
+
+class AStar(GraphSearch):
+    def __init__(self, graph, starting_point=0):
+        GraphSearch.__init__(self, graph, starting_point)
+
+    def build_node(self):
+        frontier = []
+
+        goal = Goal(int(self.graph.dim/2))
+
+        for e in self.graph.edges[self.starting_point]:
+            item_to_add = GraphSearch.Node(None, e, 1, goal)
+            heapq.heappush(frontier, item_to_add)
+
+        self.visited[self.starting_point] = True
+
+        while len(frontier) > 0:
+            n = heapq.heappop(frontier)
+            e = n.edge
+
+            u = e.either()
+            v = e.other(u)
+
+            if e.contains_goal:
+                return n
+
+            if self.visited[u] and self.visited[v]:
+                continue
+
+            vertex = u
+            if self.visited[u]:
+                vertex = v
+
+            self.visited[vertex] = True
+
+            for e in self.graph.edges[vertex]:
+                if not self.visited[e.other(vertex)]:
+                    item_to_add = GraphSearch.Node(n, e, 1, goal)
+                    heapq.heappush(frontier, item_to_add)
 
         return None
 

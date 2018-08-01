@@ -2,7 +2,7 @@ import queue
 from random import randint
 
 from robot_utils import Goal, Grid, Direction, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
-    dir_move, dir_reverse, Graph, BFS
+    dir_move, dir_reverse, Graph, BFS, AStar
 
 
 class Robot(object):
@@ -131,6 +131,17 @@ class RobotBFS(Robot):
         print (self.path)
 
 
+class RobotAStar(Robot):
+    def __init__(self, maze_dim):
+        Robot.__init__(self, maze_dim)
+
+    def build_optimal_path(self):
+        astar = AStar(self.maze_graph)
+        astar.search()
+        self.path = astar.path
+        print (self.path)
+
+
 class RobotFactory:
     def __init__(self, maze_dim):
         self.maze_dim = maze_dim
@@ -138,6 +149,8 @@ class RobotFactory:
     def get_robot(self, robot_type):
         if robot_type == 'bfs':
             return RobotBFS(self.maze_dim)
+        elif robot_type == 'astar':
+            return RobotAStar(self.maze_dim)
         else:
             return None
 
