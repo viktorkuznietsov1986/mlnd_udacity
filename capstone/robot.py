@@ -1,6 +1,9 @@
 import queue
 from random import randint
 
+import numpy as np
+from numpy.random import random
+
 from robot_utils import Goal, Grid, Direction, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
     dir_move, dir_reverse, Graph, BFS, AStar
 
@@ -18,7 +21,7 @@ class Robot(object):
         self.maze_dim = maze_dim
         self.training = True
         self.goal = Goal(maze_dim)
-        self.exploration = RandomMoveWallsDetection(self, maze_dim)
+        self.exploration = RandomMoveDeadEndMemorization(self, maze_dim)
         self.maze_graph = Graph(maze_dim*maze_dim)
         self.path = None
         self.path_idx = 0
@@ -159,7 +162,6 @@ class Exploration:
     def __init__(self, robot, maze_dim):
         self.maze_dim = maze_dim
         self.robot = robot
-        #self.grid = Grid(maze_dim, '') # maybe need to start using another ds for exploration
         self.explored_space = MazePerceived(maze_dim)
 
     def get_step(self, sensors):
@@ -187,15 +189,24 @@ class BlindRandomMove(Exploration):
 
         return rotation, step
 
+    def is_permissible(self, sensors, rotation, movement):
+        if movement <= 0:
+            return True
+
+        s = SensorInterpreter(sensors)
+        return s.distance(rotation) > movement
+
 
 class RandomMoveWallsDetection(BlindRandomMove):
     def __init__(self, robot, maze_dim):
         BlindRandomMove.__init__(self, robot, maze_dim)
+        self.dead_ends = np.zeros([maze_dim, maze_dim], int)
 
     def get_step(self, sensors):
         s = SensorInterpreter(sensors)
 
         if s.is_dead_end():
+            self.dead_ends[self.robot.robot_pos['location'][0]][self.robot.robot_pos['location'][1]] = 1
             return 90,0
 
         can_go = False
@@ -208,9 +219,97 @@ class RandomMoveWallsDetection(BlindRandomMove):
 
         return rotation, movement
 
-    def is_permissible(self, sensors, rotation, movement):
-        if movement <= 0:
-            return True
 
+class RandomMoveVisitCounter(RandomMoveWallsDetection):
+    def __init__(self, robot, maze_dim):
+        BlindRandomMove.__init__(self, robot, maze_dim)
+        self.visits = np.zeros([maze_dim, maze_dim], int)
+
+    def get_step(self, sensors):
         s = SensorInterpreter(sensors)
-        return s.distance(rotation) >= movement
+
+        self.visits[self.robot.robot_pos['location'][0]][self.robot.robot_pos['location'][1]] += 1
+
+        if s.is_dead_end():
+            return 90,0
+
+        can_go = False
+
+        explore_anyway_prob = .2
+
+        while not can_go:
+
+            explore_at_random = random.choices([False, True], [1.0-explore_anyway_prob, explore_anyway_prob])
+
+            if explore_at_random:
+                rotation, movement = BlindRandomMove.get_step(self, sensors)
+            else:
+                rotations = [-90, 0, 90]
+                steps = [i for i in range(1, 2)]
+
+                rotation_idx = randint(0, len(rotations) - 1)
+                rotation = rotations[rotation_idx]
+
+                step_idx = randint(0, len(steps) - 1)
+                movement = steps[step_idx]
+
+            if self.is_permissible(sensors, rotation, movement):
+                can_go = True
+
+
+        return rotation, movement
+
+
+
+
+
+class RandomMoveDeadEndMemorization(RandomMoveWallsDetection):
+    def __init__(self, robot, maze_dim):
+        RandomMoveWallsDetection.__init__(self, robot, maze_dim)
+
+    def get_step(self, sensors):
+        can_go = False
+
+        while not can_go:
+            rotation, movement = RandomMoveWallsDetection.get_step(self, sensors)
+
+            permissible, dead_end = self.is_permissible(sensors, rotation, movement)
+
+            if permissible:
+                break
+
+            while dead_end:
+                rotations = [-90, 0, 90]
+                rotation_idx = randint(0, len(rotations) - 1)
+                rotation = rotations[rotation_idx]
+
+                permissible, dead_end = self.is_permissible(sensors, rotation, movement)
+
+                if permissible:
+                    can_go = True
+                    break
+
+        return rotation, movement
+
+    def is_permissible(self, sensors, rotation, movement):
+        if not BlindRandomMove.is_permissible(self, sensors, rotation, movement):
+            return False, False
+
+        robot_pos = {'location': [self.robot.robot_pos['location'][0], self.robot.robot_pos['location'][1]],
+                     'heading': self.robot.robot_pos['heading']}
+
+        while movement:
+            if movement > 0:
+                robot_pos['location'][0] += dir_move[robot_pos['heading']][0]
+                robot_pos['location'][1] += dir_move[robot_pos['heading']][1]
+                movement -= 1
+            else:
+                rev_heading = dir_reverse[robot_pos['heading']]
+                robot_pos['location'][0] += dir_move[rev_heading][0]
+                robot_pos['location'][1] += dir_move[rev_heading][1]
+                movement += 1
+
+        if self.dead_ends[robot_pos['location'][0]][robot_pos['location'][1]] == 1:
+            return False, True
+
+        return True, False
