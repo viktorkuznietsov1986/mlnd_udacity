@@ -12,11 +12,20 @@ dir_move = {'u': [0, 1], 'r': [1, 0], 'd': [0, -1], 'l': [-1, 0],
 dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
                'up': 'd', 'right': 'l', 'down': 'u', 'left': 'r'}
 
-rotation_idx_dict = {-90:0, 0:1, 90:2}
+rotation_idx_dict = {-90: 0, 0: 1, 90: 2}
 
 # integer values for directions
 dir_int_mask = {'u': 1, 'r': 2, 'd': 4, 'l': 8,
                 'up': 1, 'right': 2, 'down': 4, 'left': 8}
+
+
+def try_explore_random(prob):
+    """
+    Returns the choice whether to explore or not.
+    :param prob: probability of letting explore.
+    :return: the choice whether to explore or not.
+    """
+    return np.random.choice([False, True], p=[1.0 - prob, prob])
 
 
 class Direction:
