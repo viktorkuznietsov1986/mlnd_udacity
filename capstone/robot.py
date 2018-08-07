@@ -205,7 +205,7 @@ class RandomMoveWallsDetection(BlindRandomMove):
 
         if s.is_dead_end():
             self.dead_ends[self.robot.robot_pos['location'][0]][self.robot.robot_pos['location'][1]] = 1
-            return 90,0
+            return 90, 0
 
         can_go = False
 

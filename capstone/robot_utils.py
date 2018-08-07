@@ -463,6 +463,22 @@ class AStar(GraphSearch):
         return None
 
 
+class Dijkstra(GraphSearch):
+    """
+    Todo implement
+    """
+    def __init__(self, graph, starting_point=0):
+        GraphSearch.__init__(self, graph, starting_point)
+        self.find_all_paths()
+
+    def find_all_paths(self):
+        raise NotImplemented
+
+    def build_node(self):
+        raise NotImplemented
+
+
+
 
 
 
