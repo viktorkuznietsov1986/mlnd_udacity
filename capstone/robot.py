@@ -19,7 +19,7 @@ class Robot(object):
         self.maze_dim = maze_dim
         self.training = True
         self.goal = Goal(maze_dim)
-        self.exploration = RandomMoveDeadEndMemorization(self, maze_dim)
+        self.exploration = RandomMoveVisitCounter(self, maze_dim)
         self.maze_graph = Graph(maze_dim*maze_dim)
         self.path = None
         self.path_idx = 0
@@ -163,7 +163,7 @@ class Exploration:
         self.explored_space = MazePerceived(maze_dim)
 
     def get_step(self, sensors):
-        return 0,0
+        return 0, 0
 
     def is_explored(self):
         return self.explored_space.is_explored()
@@ -229,31 +229,56 @@ class RandomMoveVisitCounter(RandomMoveWallsDetection):
         self.visits[self.robot.robot_pos['location'][0]][self.robot.robot_pos['location'][1]] += 1
 
         if s.is_dead_end():
-            return 90,0
+            return 90, 0
 
         can_go = False
 
         explore_anyway_prob = .2
 
+        rotations = [-90, 0, 90]
+        visited_cnt = []
+
+        for r in rotations:
+            robot_pos = {'location': [self.robot.robot_pos['location'][0], self.robot.robot_pos['location'][1]],
+                         'heading': dir_sensors[self.robot.robot_pos['heading']][rotation_idx_dict[r]]}
+            robot_pos['location'][0] += dir_move[robot_pos['heading']][0]
+            robot_pos['location'][1] += dir_move[robot_pos['heading']][1]
+            if 0 <= robot_pos['location'][0] < self.maze_dim and \
+                    0 <= robot_pos['location'][1] < self.maze_dim:
+                visited_cnt.append(int(self.visits[robot_pos['location'][0]][robot_pos['location'][1]]))
+            else:
+                visited_cnt.append(np.inf)
+
+        visited_dict = {visited: i for i, visited in enumerate(visited_cnt)}
+
+        steps = [i+1 for i in range(1)]
+
         while not can_go:
 
-            explore_at_random = random.choices([False, True], [1.0-explore_anyway_prob, explore_anyway_prob])
+            explore_at_random = try_explore_random(explore_anyway_prob)
+
+            visited = np.inf
 
             if explore_at_random:
                 rotation, movement = BlindRandomMove.get_step(self, sensors)
             else:
-                rotations = [-90, 0, 90]
-                steps = [i for i in range(1, 2)]
+                visited = np.min(visited_cnt)
 
-                rotation_idx = randint(0, len(rotations) - 1)
-                rotation = rotations[rotation_idx]
+                if visited == np.inf:
+                    continue
+
+                visited = int(visited)
+
+                rotation = rotations[visited_dict[visited]]
 
                 step_idx = randint(0, len(steps) - 1)
                 movement = steps[step_idx]
 
             if self.is_permissible(sensors, rotation, movement):
                 can_go = True
-
+            else:
+                if visited != np.inf:
+                    visited_cnt[visited_dict[visited]] = np.inf
 
         return rotation, movement
 

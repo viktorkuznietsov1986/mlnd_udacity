@@ -185,16 +185,17 @@ class MazePerceived:
 
     def update_cell(self, robot_pos, sensor):
 
-        mask = 0
-        sensor_heading = dir_sensors[robot_pos['heading']]
+        if self.explored[robot_pos['location'][0]][robot_pos['location'][1]] != 1:
+            mask = 0
+            sensor_heading = dir_sensors[robot_pos['heading']]
 
-        for i in range(len(sensor)):
-            if sensor[i] == 0:
-                mask |= dir_int_mask[sensor_heading[i]]
+            for i in range(len(sensor)):
+                if sensor[i] == 0:
+                    mask |= dir_int_mask[sensor_heading[i]]
 
-        self.explored_space[robot_pos['location'][0]][robot_pos['location'][1]] |= mask
-        self.explored[robot_pos['location'][0]][robot_pos['location'][1]] = 1
-        self.explored_cnt += 1
+            self.explored_space[robot_pos['location'][0]][robot_pos['location'][1]] |= mask
+            self.explored[robot_pos['location'][0]][robot_pos['location'][1]] = 1
+            self.explored_cnt += 1
 
     def get_cell(self, position):
         """
@@ -215,7 +216,7 @@ class MazePerceived:
     def is_explored(self):
         goal_bounds = [int(self.shape[0] / 2) - 1, int(self.shape[0] / 2)]
 
-        if self.explored_cnt < (self.shape[0] ** 2) / 2:
+        if self.explored_cnt < 3*(self.shape[0] ** 2) / 4:
             return False
 
         return self.check_cell_explored([goal_bounds[0], goal_bounds[0]]) \
