@@ -326,6 +326,11 @@ class GraphSearch:
         node = self.build_node()
         self.path = self.convert_node_to_path(node)
 
+        # print the debug info
+        if len(self.path) > 0:
+            print("the cost of the path is: {}".format(node.cost))
+            print("the number of moves is: {}".format(len(self.path)))
+
     def build_node(self):
         raise NotImplemented
 
@@ -377,10 +382,6 @@ class GraphSearch:
                 node = node.parent
 
         return path
-
-    def path(self):
-        print(self.path)
-        return self.path
 
 
 class BFS(GraphSearch):
@@ -457,7 +458,7 @@ class AStar(GraphSearch):
 
             for e in self.graph.edges[vertex]:
                 if not self.visited[e.other(vertex)]:
-                    item_to_add = GraphSearch.Node(n, e, 1, goal)
+                    item_to_add = GraphSearch.Node(n, e, n.cost+1, goal)
                     heapq.heappush(frontier, item_to_add)
 
         return None
