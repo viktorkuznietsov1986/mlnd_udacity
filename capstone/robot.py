@@ -1,6 +1,5 @@
 from random import randint
 import numpy as np
-from numpy.random import random
 
 from robot_utils import Goal, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
     dir_move, dir_reverse, Graph, BFS, AStar, try_explore_random
@@ -8,13 +7,12 @@ from robot_utils import Goal, SensorInterpreter, MazePerceived, dir_sensors, rot
 
 class Robot(object):
     def __init__(self, maze_dim):
-        '''
+        """
         Use the initialization function to set up attributes that your robot
         will use to learn and navigate the maze. Some initial attributes are
         provided based on common information, including the size of the maze
         the robot is placed in.
-        '''
-
+        """
         self.robot_pos = self.get_initial_robot_pos()
         self.maze_dim = maze_dim
         self.training = True
@@ -24,13 +22,28 @@ class Robot(object):
         self.path = None
         self.path_idx = 0
 
-    def get_initial_robot_pos(self):
+    @staticmethod
+    def get_initial_robot_pos():
+        """
+        Gets the initial robot position: location: [0, 0] and heading: up.
+        :return: the initial robot position: location: [0, 0] and heading: up.
+        """
         return {'location': [0, 0], 'heading': 'up'}
 
     def robot_position_2_graph_vertex(self):
+        """
+        Converts the robot's location to a vertex on the graph.
+        :return: a vertex on the graph corresponding to robot's location.
+        """
         return int(int(self.robot_pos['location'][1]*self.maze_dim) + self.robot_pos['location'][0])
 
     def update_position(self, sensor, rotation, movement):
+        """
+        Update the robot's beleif state.
+        :param sensor: sensory information.
+        :param rotation: the rotation value.
+        :param movement: number of steps to move.
+        """
         steps_available = sensor[rotation_idx_dict[rotation]]
 
         # update heading based on the rotation values
@@ -58,10 +71,13 @@ class Robot(object):
             u = v
 
     def build_optimal_path(self):
+        """
+        Builds the optimal path. Should be implemented in the child classes.
+        """
         raise NotImplemented
 
     def next_move(self, sensors):
-        '''
+        """
         Use this function to determine the next move the robot should make,
         based on the input from the sensors after its previous move. Sensor
         inputs are a list of three distances from the robot's left, front, and
@@ -80,7 +96,7 @@ class Robot(object):
         If the robot wants to end a run (e.g. during the first training run in
         the maze) then returning the tuple ('Reset', 'Reset') will indicate to
         the tester to end the run and return the robot to the start.
-        '''
+        """
         rotation = 0
         movement = 0
 
@@ -103,25 +119,39 @@ class Robot(object):
         return rotation, movement
 
     def get_training_step(self, sensors):
-        '''Gets the training step and updates the beleif space.'''
+        """
+        Gets the training step and updates the beleif space.
+        :param sensors: sensors information.
+        :return: values for rotation, movement and whether we're done with the exploration.
+        """
         rotation, movement = self.exploration.get_step(sensors)
         done = self.exploration.is_explored()
         return rotation, movement, done
 
     def get_step(self, sensors):
-        '''Gets the optimal step.'''
+        """
+        Gets the optimal step based on path found or sensory information.
+        :param sensors: sensory information.
+        :return: optimal (rotation, movement) based on the path found.
+        """
         step = self.path[self.path_idx]
         self.path_idx += 1
         return step
 
     def hit_goal(self):
-        '''Checks if the goal is hit by the agent.'''
+        """
+        Checks if the goal is hit by the agent.
+        :return: True if the goal is hit by the agent, False otherwise.
+        """
         goal_bounds = [int(self.maze_dim / 2) - 1, int(self.maze_dim / 2)]
 
         return self.robot_pos['location'][0] in goal_bounds and self.robot_pos['location'][1] in goal_bounds
 
 
 class RobotBFS(Robot):
+    """
+    The BFS implementation for the robot.
+    """
     def __init__(self, maze_dim):
         Robot.__init__(self, maze_dim)
 
@@ -133,6 +163,9 @@ class RobotBFS(Robot):
 
 
 class RobotAStar(Robot):
+    """
+    The A* implementation for the robot.
+    """
     def __init__(self, maze_dim):
         Robot.__init__(self, maze_dim)
 
@@ -144,10 +177,18 @@ class RobotAStar(Robot):
 
 
 class RobotFactory:
+    """
+    The factory class to create a different kinds of robots.
+    """
     def __init__(self, maze_dim):
         self.maze_dim = maze_dim
 
     def get_robot(self, robot_type):
+        """
+        Retrieve the robot of the specified type.
+        :param robot_type: type of the robot to create. here's the range: ('bfs', 'astar')
+        :return: the robot of the specified type or None if no robot created.
+        """
         if robot_type == 'bfs':
             return RobotBFS(self.maze_dim)
         elif robot_type == 'astar':
@@ -157,25 +198,45 @@ class RobotFactory:
 
 
 class Exploration:
+    """
+    Base class for exploration.
+    """
     def __init__(self, robot, maze_dim):
+        """
+        Ctor.
+        :param robot: an intelligent agent.
+        :param maze_dim: the dimensions of the maze.
+        """
         self.maze_dim = maze_dim
         self.robot = robot
         self.explored_space = MazePerceived(maze_dim)
 
     def get_step(self, sensors):
-        return 0, 0
+        """
+        Should be implemented in the nested classes.
+        :param sensors: sensory information perceived by the robot.
+        :return: a step in format (rotation, movement).
+        """
+        raise NotImplemented
 
     def is_explored(self):
+        """
+        Check if the exploration is done.
+        :return: True if the exploration is done, False otherwise.
+        """
         return self.explored_space.is_explored()
 
 
 class BlindRandomMove(Exploration):
+    """
+    The simplest class for exploration. Does a random move without looking at the sensory information.
+    """
     def __init__(self, robot, maze_dim):
         Exploration.__init__(self, robot, maze_dim)
 
     def get_step(self, sensors):
         rotations = [-90, 0, 90]
-        steps = [i for i in range(1,2)]
+        steps = [i+1 for i in range(1)]
 
         rotation_idx = randint(0, len(rotations)-1)
         rotation = rotations[rotation_idx]
@@ -188,6 +249,13 @@ class BlindRandomMove(Exploration):
         return rotation, step
 
     def is_permissible(self, sensors, rotation, movement):
+        """
+        Checks if the agent can accomplish the chosen move.
+        :param sensors: sensory information.
+        :param rotation: the value for rotation.
+        :param movement: the value for movement.
+        :return: True if the agent can go, False otherwise.
+        """
         if movement <= 0:
             return True
 
@@ -219,6 +287,9 @@ class RandomMoveWallsDetection(BlindRandomMove):
 
 
 class RandomMoveVisitCounter(RandomMoveWallsDetection):
+    """
+    Counts the number of visits to any specified cell in order to visit the less visited first.
+    """
     def __init__(self, robot, maze_dim):
         BlindRandomMove.__init__(self, robot, maze_dim)
         self.visits = np.zeros([maze_dim, maze_dim], int)

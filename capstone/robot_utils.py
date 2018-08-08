@@ -367,8 +367,9 @@ class GraphSearch:
             u = self.edge.either()
             v = self.edge.other(u)
 
-            if self.goal is not None:
-                return self.cost + min(self.goal.get_squared_distance(u), self.goal.get_squared_distance(v))
+            # todo build a better heuristics
+            #if self.goal is not None:
+            #    return self.cost + self.goal.get_distance(v)
 
             return self.cost
 
@@ -484,9 +485,11 @@ class BFS(GraphSearch):
         frontier = deque()
 
         for e in self.graph.edges[self.starting_point]:
-            frontier.append(GraphSearch.Node(None, e))
+            frontier.append(GraphSearch.Node(None, e, 1))
 
         self.visited[self.starting_point] = True
+
+        goal_node = None
 
         while len(frontier) > 0:
             n = frontier.popleft()
@@ -496,7 +499,11 @@ class BFS(GraphSearch):
             v = e.other(u)
 
             if e.contains_goal:
-                return n
+                if goal_node is None:
+                    goal_node = n
+                else:
+                    if goal_node.cost > n.cost:
+                        goal_node = n
 
             if self.visited[u] and self.visited[v]:
                 continue
@@ -509,9 +516,9 @@ class BFS(GraphSearch):
 
             for e in self.graph.edges[vertex]:
                 if not self.visited[e.other(vertex)]:
-                    frontier.append(GraphSearch.Node(n, e))
+                    frontier.append(GraphSearch.Node(n, e, n.cost+1))
 
-        return None
+        return goal_node
 
 
 class AStar(GraphSearch):
