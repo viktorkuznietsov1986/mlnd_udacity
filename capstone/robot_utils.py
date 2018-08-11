@@ -208,7 +208,7 @@ class MazePerceived:
         """
         goal_bounds = [int(self.shape[0] / 2) - 1, int(self.shape[0] / 2)]
 
-        if self.explored_cnt < 3*(self.shape[0] ** 2) / 4:
+        if self.explored_cnt < 5*(self.shape[0] ** 2)/6:
             return False
 
         return self.check_cell_explored([goal_bounds[0], goal_bounds[0]]) \
@@ -364,12 +364,9 @@ class GraphSearch:
             Get the cost, based on the initial cost + the heuristics (squared distance to the goal).
             :return: the cost.
             """
-            u = self.edge.either()
-            v = self.edge.other(u)
-
-            # todo build a better heuristics
-            #if self.goal is not None:
-            #    return self.cost + self.goal.get_distance(v)
+            # we'll use the following heuristics: do penalize the agent for a turn.
+            if self.parent is not None and (self.parent.edge.direction != self.edge.direction):
+                return self.cost + 1
 
             return self.cost
 
