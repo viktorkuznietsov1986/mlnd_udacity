@@ -17,10 +17,11 @@ class Robot(object):
         self.maze_dim = maze_dim
         self.training = True
         self.goal = Goal(maze_dim)
-        self.exploration = RandomMoveVisitCounter(self, maze_dim)
+        self.exploration = RandomMoveVisitCounter(self, maze_dim) # RandomMoveWallsDetection(self, maze_dim)
         self.maze_graph = Graph(maze_dim*maze_dim)
         self.path = None
         self.path_idx = 0
+        self.training_steps = 0
 
     @staticmethod
     def get_initial_robot_pos():
@@ -125,7 +126,12 @@ class Robot(object):
         :return: values for rotation, movement and whether we're done with the exploration.
         """
         rotation, movement = self.exploration.get_step(sensors)
+        self.training_steps += 1
         done = self.exploration.is_explored()
+
+        if done:
+            print("The maze was explored with {} training steps.".format(self.training_steps))
+
         return rotation, movement, done
 
     def get_step(self, sensors):

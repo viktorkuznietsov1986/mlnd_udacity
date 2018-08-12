@@ -190,7 +190,7 @@ class MazePerceived:
         """
         goal_bounds = [int(self.shape[0] / 2) - 1, int(self.shape[0] / 2)]
 
-        if self.explored_cnt < 5*(self.shape[0] ** 2)/6:
+        if self.explored_cnt < 4*(self.shape[0] ** 2)/5:
             return False
 
         return self.check_cell_explored([goal_bounds[0], goal_bounds[0]]) \
@@ -473,11 +473,15 @@ class BFS(GraphSearch):
 
         while len(frontier) > 0:
             n = frontier.popleft()
-            self.nodes_explored_cnt += 1
             e = n.edge
 
             u = e.either()
             v = e.other(u)
+
+            if self.visited[u] and self.visited[v]:
+                continue
+
+            self.nodes_explored_cnt += 1
 
             if e.contains_goal:
                 if goal_node is None:
@@ -485,9 +489,6 @@ class BFS(GraphSearch):
                 else:
                     if goal_node.cost > n.cost:
                         goal_node = n
-
-            if self.visited[u] and self.visited[v]:
-                continue
 
             vertex = u
             if self.visited[u]:
@@ -522,17 +523,19 @@ class AStar(GraphSearch):
 
         while len(frontier) > 0:
             n = heapq.heappop(frontier)
-            self.nodes_explored_cnt += 1
+
             e = n.edge
 
             u = e.either()
             v = e.other(u)
 
-            if e.contains_goal:
-                return n
-
             if self.visited[u] and self.visited[v]:
                 continue
+
+            self.nodes_explored_cnt += 1
+
+            if e.contains_goal:
+                return n
 
             vertex = u
             if self.visited[u]:
@@ -551,6 +554,8 @@ class AStar(GraphSearch):
 class Dijkstra(GraphSearch):
     """
     Implements the Dijkstra algorithm.
+    Note: shouldn't be implemented as the part of the project as it does the redundant work of finding and storing all
+    the unnecessary paths.
     """
     def __init__(self, graph, starting_point=0):
         GraphSearch.__init__(self, graph, starting_point)
