@@ -133,24 +133,6 @@ class Goal:
         """
         return location[0] in self.goal_bounds and location[1] in self.goal_bounds
 
-    def get_distance(self, x):
-        """
-        Returns the distance to the minimum distance to the goal
-        :param x: current position scaled in 1D.
-        :return: distance to the goal position, scaled in 1D.
-        """
-        goal_pos = int(int(self.goal_bounds[1] * self.maze_dim) + self.goal_bounds[0])
-        return abs(x-goal_pos)
-
-    def get_squared_distance(self, x):
-        """
-        Returns the squared distance to the minimum distance to the goal
-        :param x: current position scaled in 1D.
-        :return: the squared distance to the goal position, scaled in 1D.
-        """
-        goal_pos = self.goal_bounds[1] * self.maze_dim + self.goal_bounds[0]
-        return int(abs((x-goal_pos)**2))
-
 
 class MazePerceived:
     """
