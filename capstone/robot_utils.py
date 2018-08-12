@@ -370,6 +370,7 @@ class GraphSearch:
         self.starting_point = starting_point
         self.visited = [False for i in range(graph.V)]
         self.path = []
+        self.nodes_explored_cnt = 0
 
     def search(self):
         """
@@ -472,6 +473,7 @@ class BFS(GraphSearch):
 
         while len(frontier) > 0:
             n = frontier.popleft()
+            self.nodes_explored_cnt += 1
             e = n.edge
 
             u = e.either()
@@ -520,6 +522,7 @@ class AStar(GraphSearch):
 
         while len(frontier) > 0:
             n = heapq.heappop(frontier)
+            self.nodes_explored_cnt += 1
             e = n.edge
 
             u = e.either()

@@ -2,7 +2,7 @@ from random import randint
 import numpy as np
 
 from robot_utils import Goal, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
-    dir_move, dir_reverse, Graph, BFS, AStar, try_explore_random
+    dir_move, dir_reverse, Graph, BFS, AStar, try_explore_random, Dijkstra
 
 
 class Robot(object):
@@ -160,6 +160,7 @@ class RobotBFS(Robot):
         bfs.search()
         self.path = bfs.path
         print (self.path)
+        print (bfs.nodes_explored_cnt)
 
 
 class RobotAStar(Robot):
@@ -174,6 +175,22 @@ class RobotAStar(Robot):
         astar.search()
         self.path = astar.path
         print (self.path)
+        print (astar.nodes_explored_cnt)
+
+
+class RobotDijkstra(Robot):
+    """
+    The Dijkstra algorithm implementation for the robot.
+    """
+    def __init__(self, maze_dim):
+        Robot.__init__(self, maze_dim)
+
+    def build_optimal_path(self):
+        dijkstra = Dijkstra(self.maze_graph)
+        dijkstra.search()
+        self.path = dijkstra.path
+        print (self.path)
+        print (dijkstra.nodes_explored_cnt)
 
 
 class RobotFactory:
@@ -193,6 +210,8 @@ class RobotFactory:
             return RobotBFS(self.maze_dim)
         elif robot_type == 'astar':
             return RobotAStar(self.maze_dim)
+        elif robot_type == 'dijkstra':
+            return RobotDijkstra(self.maze_dim)
         else:
             return None
 
