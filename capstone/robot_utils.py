@@ -568,6 +568,42 @@ class Dijkstra(GraphSearch):
         raise NotImplemented
 
 
+class GridVisualization:
+    """
+    The class is used to visualize the path on the maze.
+    The grid is shown in 0s with 1s as the robot movements.
+    """
+    def __init__(self, maze_dim, path):
+        self.shape = (maze_dim, maze_dim)
+        self.grid = np.chararray(self.shape, unicode=True)
+        self.grid[:] = '.'
+        self.update_grid_with_path(path)
+
+    def update_grid_with_path(self, path):
+        robot_pos = {'location': [self.shape[0]-1, 0], 'heading': 'u'}
+        self.grid[robot_pos['location'][0]][robot_pos['location'][1]] = robot_pos['heading']
+
+        for rotation, movement in path:
+            # update heading based on the rotation values
+            robot_pos['heading'] = dir_sensors[robot_pos['heading']][rotation_idx_dict[rotation]]
+
+            while movement > 0:
+                robot_pos['location'][0] -= dir_move[robot_pos['heading']][1]
+                robot_pos['location'][1] += dir_move[robot_pos['heading']][0]
+                movement -= 1
+                self.grid[robot_pos['location'][0]][robot_pos['location'][1]] = robot_pos['heading']
+
+    def show_grid(self):
+        #print(self.grid)
+        for row in self.grid:
+            str_value = '| '
+            for column in row:
+                str_value += str(column) + ' '
+
+            str_value += '|'
+            print(str_value)
+
+
 
 
 

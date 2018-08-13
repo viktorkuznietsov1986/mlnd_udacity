@@ -2,7 +2,7 @@ from random import randint
 import numpy as np
 
 from robot_utils import Goal, SensorInterpreter, MazePerceived, dir_sensors, rotation_idx_dict, \
-    dir_move, dir_reverse, Graph, BFS, AStar, try_explore_random, Dijkstra
+    dir_move, dir_reverse, Graph, BFS, AStar, try_explore_random, Dijkstra, GridVisualization
 
 
 class Robot(object):
@@ -113,6 +113,10 @@ class Robot(object):
                 self.robot_pos = self.get_initial_robot_pos()
                 self.training = False
                 self.build_optimal_path()
+
+                print ("The path is: ")
+                GridVisualization(self.maze_dim, self.path).show_grid()
+
                 return 'Reset', 'Reset'
         else:
             rotation, movement = self.get_step(sensors)
